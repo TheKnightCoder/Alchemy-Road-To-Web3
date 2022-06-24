@@ -10,7 +10,9 @@ contract RussFrog is ERC721, ERC721Enumerable, ERC721URIStorage {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
+    mapping(address => Counters.Counter) balances;
     uint256 MAX_SUPPLY = 10000;
+    uint256 MAX_PER_ADDRESS = 5;
 
     constructor() ERC721("RussFrog", "RF") {}
 
@@ -19,8 +21,13 @@ contract RussFrog is ERC721, ERC721Enumerable, ERC721URIStorage {
             _tokenIdCounter.current() <= MAX_SUPPLY,
             "I'm sorry we reached the cap"
         );
+        require(
+            balances[to].current() <= MAX_PER_ADDRESS,
+            "Sorry address reached max NFTs"
+        );
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
+        balances[to].increment();
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
     }
