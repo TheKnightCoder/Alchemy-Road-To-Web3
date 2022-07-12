@@ -81,7 +81,10 @@ contract Staker {
     }
 
     function stakeEarnings(address someAddress) public view returns (uint256) {
-        return (2 wei**(block.timestamp - depositTimestamps[someAddress]));
+        return
+            balances[someAddress] +
+            (2 wei **
+                (0.001 * (block.timestamp - depositTimestamps[someAddress])));
     }
 
     function withdraw()
@@ -92,8 +95,7 @@ contract Staker {
     {
         require(balances[msg.sender] > 0, "You have no balance to withdraw!");
         uint256 individualBalance = balances[msg.sender];
-        uint256 indBalanceRewards = individualBalance + (2 wei**(block.timestamp - depositTimestamps[msg.sender]));
-        balances[msg.sender] = 0;
+        uint256 indBalanceRewards = stakeEarnings(msg.sender);
 
         // Transfer all ETH via call! (not transfer) cc: https://solidity-by-example.org/sending-ether
         (bool sent, bytes memory data) = msg.sender.call{
