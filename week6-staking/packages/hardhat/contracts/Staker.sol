@@ -83,8 +83,7 @@ contract Staker {
     function stakeEarnings(address someAddress) public view returns (uint256) {
         return
             balances[someAddress] +
-            (2 wei **
-                (0.001 * (block.timestamp - depositTimestamps[someAddress])));
+            (2 wei**((block.timestamp - depositTimestamps[someAddress]) / 10));
     }
 
     function withdraw()
