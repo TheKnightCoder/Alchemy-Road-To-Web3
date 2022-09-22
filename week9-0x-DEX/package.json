@@ -1,0 +1,18 @@
+{
+	"dependencies": {
+		"qs": "^6.11.0"
+	},
+	"name": "week9-0x-dex",
+	"version": "1.0.0",
+	"main": "index.js",
+	"devDependencies": {
+		"browserify": "^17.0.0"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"bundle": "browserify index.js --standalone bundle -o bundle.js"
+	},
+	"author": "",
+	"license": "ISC",
+	"description": ""
+}
