@@ -74,6 +74,7 @@ async function openModal(side) {
   document.getElementById("token_modal").style.display = "block";
 }
 async function closeModal() {
+  document.getElementById("liq_sources").innerHTML = "";
   document.getElementById("token_modal").style.display = "none";
 }
 
@@ -91,6 +92,9 @@ async function getPrice() {
   // fetch the swap price
   const response = await fetch(`https://api.0x.org/swap/v1/price?${qs.stringify(params)}`);
   swapPriceJSON = await response.json();
+
+  document.getElementById("liq_sources").innerHTML = getSources(swapPriceJSON.sources);
+
   console.log('Price', swapPriceJSON);
 
   document.getElementById("to_amount").value = swapPriceJSON.buyAmount / (10 ** currentTrade.to.decimals);
@@ -120,6 +124,11 @@ async function getQuote(address) {
   return swapQuoteJSON;
 }
 
+const getSources = (sources) => sources
+  .filter((source) => source.proportion !== "0")
+  .map((source) => `${source.name} ${Number(source.proportion) * 100}%`)
+  .join(" -> ")
+
 async function trySwap() {
   let accounts = await ethereum.request({ method: "eth_accounts" });
   let takerAddress = accounts[0];
@@ -129,7 +138,6 @@ async function trySwap() {
   console.log('try');
   const swapQuoteJSON = await getQuote(takerAddress);
   console.log('swapQuoteJSON', swapQuoteJSON);
-
 
   if (swapQuoteJSON.code == 105) {
     console.log('approving');
@@ -150,10 +158,10 @@ async function trySwap() {
 
     console.log("setup ERC20TokenContract: ", ERC20TokenContract);
   } else {
+    document.getElementById("liq_sources").innerHTML = getSources(swapQuoteJSON.sources);
     const receipt = await web3.eth.sendTransaction(swapQuoteJSON);
     console.log("receipt: ", receipt);
   }
-
 }
 
 init();
