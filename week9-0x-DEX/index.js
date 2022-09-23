@@ -1,34 +1,61 @@
 const { default: BigNumber } = require('bignumber.js');
 const qs = require('qs');
 const Web3 = require('web3');
+const Fuse = require('fuse.js')
 
 let currentTrade = {};
 let currentSelectSide;
-
+let fullTokenList;
 async function init() {
+  console.log("initializing");
+  let response = await fetch("https://tokens.coingecko.com/uniswap/all.json");
+  fullTokenList = (await response.json()).tokens;
   await listAvailableTokens();
 }
 
 async function listAvailableTokens() {
-  console.log("initializing");
-  let response = await fetch("https://tokens.coingecko.com/uniswap/all.json");
-  let tokenListJSON = await response.json();
-  console.log('listing available tokens: ', tokenListJSON);
+  const options = {
+    // isCaseSensitive: false,
+    // includeScore: false,
+    // shouldSort: true,
+    // includeMatches: false,
+    // findAllMatches: false,
+    // minMatchCharLength: 1,
+    // location: 0,
+    // threshold: 0.6,
+    // distance: 100,
+    // useExtendedSearch: false,
+    // ignoreLocation: false,
+    // ignoreFieldNorm: false,
+    // fieldNormWeight: 1,
+    keys: [
+      "name"
+    ]
+  };
 
-  tokens = tokenListJSON.tokens;
-  console.log('tokens:', tokens);
+  const fuse = new Fuse(fullTokenList, options);
+
+  // Change the pattern
+  const pattern = document.getElementById("token_search").value
+  console.log('pattern', pattern);
+  const tokens = fuse.search(pattern)
+
+  console.log('filtered tokens: ', tokens);
+
+  document.getElementById("token_list").innerHTML = "";
+  console.log('cleared');
   let parent = document.getElementById("token_list");
   for (const i in tokens) {
     let div = document.createElement("div");
     div.className = "token_row";
 
     let html =
-      `<img class="token_list_img" src=${tokens[i].logoURI}/>
-    <span class="token_list_text">${tokens[i].symbol}</span>`;
+      `<img class="token_list_img" src=${tokens[i].item.logoURI}/>
+    <span class="token_list_text">${tokens[i].item.symbol}</span>`;
 
     div.innerHTML = html;
     div.onclick = () => {
-      selectToken(tokens[i]);
+      selectToken(tokens[i].item);
     }
     parent.appendChild(div);
   }
@@ -208,3 +235,4 @@ document.getElementById("from_amount").onblur = getPriceFromAmount;
 document.getElementById("to_amount").onblur = getPriceToAmount;
 
 document.getElementById("swap_button").onclick = trySwap;
+document.getElementById("token_search").onchange = listAvailableTokens;
