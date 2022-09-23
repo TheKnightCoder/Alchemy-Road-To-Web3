@@ -78,6 +78,14 @@ async function closeModal() {
   document.getElementById("token_modal").style.display = "none";
 }
 
+const getEstimatedGas = async ({ estimatedGas, gasPrice }) => {
+  const resp = await (await fetch(
+    'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+  )).json()
+  console.log(resp);
+  return `${estimatedGas} gas (~ $${(((estimatedGas * gasPrice) / 10 ** 18) * resp.ethereum.usd).toFixed(2)})`
+}
+
 async function getPriceFromAmount() {
   if (!currentTrade.from || !currentTrade.to || !document.getElementById("from_amount").value) return;
 
@@ -98,7 +106,7 @@ async function getPriceFromAmount() {
   console.log('Price', swapPriceJSON);
 
   document.getElementById("to_amount").value = swapPriceJSON.buyAmount / (10 ** currentTrade.to.decimals);
-  document.getElementById("gas_estimate").innerHTML = swapPriceJSON.estimatedGas;
+  document.getElementById("gas_estimate").innerHTML = await getEstimatedGas(swapPriceJSON);
 }
 
 async function getPriceToAmount() {
@@ -121,7 +129,7 @@ async function getPriceToAmount() {
   console.log('Price', swapPriceJSON);
 
   document.getElementById("from_amount").value = swapPriceJSON.sellAmount / (10 ** currentTrade.to.decimals);
-  document.getElementById("gas_estimate").innerHTML = swapPriceJSON.estimatedGas;
+  document.getElementById("gas_estimate").innerHTML = await getEstimatedGas(swapPriceJSON);
 }
 
 async function getQuote(address) {
@@ -142,7 +150,7 @@ async function getQuote(address) {
   console.log('Quote', swapQuoteJSON);
 
   document.getElementById("to_amount").value = swapQuoteJSON.buyAmount / (10 ** currentTrade.to.decimals);
-  document.getElementById("gas_estimate").innerHTML = swapQuoteJSON.estimatedGas;
+  document.getElementById("gas_estimate").innerHTML = await getEstimatedGas(swapPriceJSON);
 
   return swapQuoteJSON;
 }
