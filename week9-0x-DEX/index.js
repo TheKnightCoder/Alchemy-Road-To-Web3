@@ -6,10 +6,48 @@ const Fuse = require('fuse.js')
 let currentTrade = {};
 let currentSelectSide;
 let fullTokenList;
+let chainId = 1;
+const chains = {
+  1: {
+    network: 'ethereum',
+    geckoId: 'ethereum',
+    zXApi: 'https://api.0x.org',
+    tokenListApi: "https://raw.githubusercontent.com/viaprotocol/tokenlists/main/tokenlists/ethereum.json"
+  },
+  137: {
+    network: 'polygon',
+    geckoId: 'matic-network',
+    zXApi: 'https://polygon.api.0x.org',
+    tokenListApi: "https://raw.githubusercontent.com/viaprotocol/tokenlists/main/tokenlists/polygon.json"
+  },
+  56: {
+    network: 'binance smart chain',
+    geckoId: 'binancecoin',
+    zXApi: 'https://bsc.api.0x.org',
+    tokenListApi: "https://raw.githubusercontent.com/viaprotocol/tokenlists/main/tokenlists/bsc.json"
+  },
+  250: {
+    network: 'fantom',
+    geckoId: 'fantom',
+    zXApi: 'https://fantom.api.0x.org',
+    tokenListApi: "https://raw.githubusercontent.com/viaprotocol/tokenlists/main/tokenlists/ftm.json"
+  },
+  43114: {
+    network: 'avalanche',
+    geckoId: 'avalanche-2',
+    zXApi: 'https://avalanche.api.0x.org',
+    tokenListApi: "https://raw.githubusercontent.com/viaprotocol/tokenlists/main/tokenlists/avax.json"
+  },
+}
+
 async function init() {
   console.log("initializing");
-  let response = await fetch("https://tokens.coingecko.com/uniswap/all.json");
-  fullTokenList = (await response.json()).tokens;
+  chainId = parseInt(await ethereum.request({ method: 'eth_chainId' }), 16);
+  console.log(`initial chain id ${chainId}`);
+  console.log(`chain ${chainId} fetching token list ${chains[chainId].tokenListApi}`);
+  let response = await fetch(chains[chainId].tokenListApi);
+  fullTokenList = (await response.json());
+  // fullTokenList = (await response.json()).tokens; // URI https://tokens.coingecko.com/uniswap/all.json
   await listAvailableTokens();
 }
 
@@ -35,6 +73,7 @@ async function listAvailableTokens() {
 
   const fuse = new Fuse(fullTokenList, options);
 
+  console.log('full token list', fullTokenList);
   // Change the pattern
   const pattern = document.getElementById("token_search").value
   console.log('pattern', pattern);
@@ -106,10 +145,10 @@ async function closeModal() {
 
 const getEstimatedGas = async ({ estimatedGas, gasPrice }) => {
   const resp = await (await fetch(
-    'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+    `https://api.coingecko.com/api/v3/simple/price?ids=${chains[chainId].geckoId}&vs_currencies=usd`
   )).json()
   console.log(resp);
-  return `${estimatedGas} gas (~ $${(((estimatedGas * gasPrice) / 10 ** 18) * resp.ethereum.usd).toFixed(2)})`
+  return `${estimatedGas} gas (~ $${(((estimatedGas * gasPrice) / 10 ** 18) * resp[chains[chainId].geckoId].usd).toFixed(2)})`
 }
 
 async function getPriceFromAmount() {
@@ -124,7 +163,7 @@ async function getPriceFromAmount() {
   }
 
   // fetch the swap price
-  const response = await fetch(`https://api.0x.org/swap/v1/price?${qs.stringify(params)}`);
+  const response = await fetch(`${chains[chainId].zXApi}/swap/v1/price?${qs.stringify(params)}`);
   swapPriceJSON = await response.json();
 
   document.getElementById("liq_sources").innerHTML = getSources(swapPriceJSON.sources);
@@ -147,7 +186,7 @@ async function getPriceToAmount() {
   }
 
   // fetch the swap price
-  const response = await fetch(`https://api.0x.org/swap/v1/price?${qs.stringify(params)}`);
+  const response = await fetch(`${chains[chainId].zXApi}/swap/v1/price?${qs.stringify(params)}`);
   swapPriceJSON = await response.json();
 
   document.getElementById("liq_sources").innerHTML = getSources(swapPriceJSON.sources);
@@ -171,7 +210,7 @@ async function getQuote(address) {
   }
 
   // fetch the swap quote
-  const response = await fetch(`https://api.0x.org/swap/v1/quote?${qs.stringify(params)}`);
+  const response = await fetch(`${chains[chainId].zXApi}/swap/v1/quote?${qs.stringify(params)}`);
   swapQuoteJSON = await response.json();
   console.log('Quote', swapQuoteJSON);
 
@@ -221,6 +260,13 @@ async function trySwap() {
     console.log("receipt: ", receipt);
   }
 }
+
+const handleChainChanged = (_chainId) => {
+  console.log(`Switched to chain id ${parseInt(_chainId, 16)}`);
+  chainId = parseInt(_chainId, 16);
+  init();
+}
+ethereum.on('chainChanged', handleChainChanged);
 
 init();
 document.getElementById("login_button").onclick = connect;
