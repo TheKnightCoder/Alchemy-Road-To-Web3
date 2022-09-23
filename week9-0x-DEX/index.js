@@ -77,7 +77,7 @@ async function closeModal() {
   document.getElementById("token_modal").style.display = "none";
 }
 
-async function getPrice() {
+async function getPriceFromAmount() {
   if (!currentTrade.from || !currentTrade.to || !document.getElementById("from_amount").value) return;
 
   let amount = Number(document.getElementById("from_amount").value * 10 ** currentTrade.from.decimals);
@@ -97,6 +97,29 @@ async function getPrice() {
   console.log('Price', swapPriceJSON);
 
   document.getElementById("to_amount").value = swapPriceJSON.buyAmount / (10 ** currentTrade.to.decimals);
+  document.getElementById("gas_estimate").innerHTML = swapPriceJSON.estimatedGas;
+}
+
+async function getPriceToAmount() {
+  if (!currentTrade.from || !currentTrade.to || !document.getElementById("to_amount").value) return;
+
+  let amount = Number(document.getElementById("to_amount").value * 10 ** currentTrade.from.decimals);
+
+  const params = {
+    sellToken: currentTrade.from.address,
+    buyToken: currentTrade.to.address,
+    buyAmount: amount
+  }
+
+  // fetch the swap price
+  const response = await fetch(`https://api.0x.org/swap/v1/price?${qs.stringify(params)}`);
+  swapPriceJSON = await response.json();
+
+  document.getElementById("liq_sources").innerHTML = getSources(swapPriceJSON.sources);
+
+  console.log('Price', swapPriceJSON);
+
+  document.getElementById("from_amount").value = swapPriceJSON.sellAmount / (10 ** currentTrade.to.decimals);
   document.getElementById("gas_estimate").innerHTML = swapPriceJSON.estimatedGas;
 }
 
@@ -173,5 +196,7 @@ document.getElementById("to_token_select").onclick = () => {
   openModal("to");
 }
 document.getElementById("modal_close").onclick = closeModal;
-document.getElementById("from_amount").onblur = getPrice;
+document.getElementById("from_amount").onblur = getPriceFromAmount;
+document.getElementById("to_amount").onblur = getPriceToAmount;
+
 document.getElementById("swap_button").onclick = trySwap;

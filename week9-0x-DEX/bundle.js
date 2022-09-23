@@ -78,7 +78,7 @@ async function closeModal() {
   document.getElementById("token_modal").style.display = "none";
 }
 
-async function getPrice() {
+async function getPriceFromAmount() {
   if (!currentTrade.from || !currentTrade.to || !document.getElementById("from_amount").value) return;
 
   let amount = Number(document.getElementById("from_amount").value * 10 ** currentTrade.from.decimals);
@@ -98,6 +98,29 @@ async function getPrice() {
   console.log('Price', swapPriceJSON);
 
   document.getElementById("to_amount").value = swapPriceJSON.buyAmount / (10 ** currentTrade.to.decimals);
+  document.getElementById("gas_estimate").innerHTML = swapPriceJSON.estimatedGas;
+}
+
+async function getPriceToAmount() {
+  if (!currentTrade.from || !currentTrade.to || !document.getElementById("to_amount").value) return;
+
+  let amount = Number(document.getElementById("to_amount").value * 10 ** currentTrade.from.decimals);
+
+  const params = {
+    sellToken: currentTrade.from.address,
+    buyToken: currentTrade.to.address,
+    buyAmount: amount
+  }
+
+  // fetch the swap price
+  const response = await fetch(`https://api.0x.org/swap/v1/price?${qs.stringify(params)}`);
+  swapPriceJSON = await response.json();
+
+  document.getElementById("liq_sources").innerHTML = getSources(swapPriceJSON.sources);
+
+  console.log('Price', swapPriceJSON);
+
+  document.getElementById("from_amount").value = swapPriceJSON.sellAmount / (10 ** currentTrade.to.decimals);
   document.getElementById("gas_estimate").innerHTML = swapPriceJSON.estimatedGas;
 }
 
@@ -146,10 +169,11 @@ async function trySwap() {
     const erc20abi = [{ "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "_spender", "type": "address" }, { "name": "_value", "type": "uint256" }], "name": "approve", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "totalSupply", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "_from", "type": "address" }, { "name": "_to", "type": "address" }, { "name": "_value", "type": "uint256" }], "name": "transferFrom", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint8" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "balance", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "_to", "type": "address" }, { "name": "_value", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }, { "name": "_spender", "type": "address" }], "name": "allowance", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "payable": true, "stateMutability": "payable", "type": "fallback" }, { "anonymous": false, "inputs": [{ "indexed": true, "name": "owner", "type": "address" }, { "indexed": true, "name": "spender", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": true, "name": "from", "type": "address" }, { "indexed": true, "name": "to", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }], "name": "Transfer", "type": "event" }]
     const ERC20TokenContract = new web3.eth.Contract(erc20abi, fromTokenAddress);
 
-    const maxApproval = new BigNumber(2).pow(256).minus(1);
+    const approvalAmount = Number(document.getElementById("from_amount").value * 10 ** currentTrade.from.decimals);
+
     ERC20TokenContract.methods.approve(
       swapQuoteJSON.allowanceTarget,
-      maxApproval,
+      approvalAmount,
     )
       .send({ from: takerAddress })
       .then(tx => {
@@ -173,7 +197,9 @@ document.getElementById("to_token_select").onclick = () => {
   openModal("to");
 }
 document.getElementById("modal_close").onclick = closeModal;
-document.getElementById("from_amount").onblur = getPrice;
+document.getElementById("from_amount").onblur = getPriceFromAmount;
+document.getElementById("to_amount").onblur = getPriceToAmount;
+
 document.getElementById("swap_button").onclick = trySwap;
 },{"bignumber.js":2,"qs":14,"web3":19}],2:[function(require,module,exports){
 ;(function (globalObject) {
