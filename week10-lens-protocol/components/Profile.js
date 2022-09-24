@@ -7,9 +7,12 @@ const displayProfile = (profile) => {
     ? profile.picture.original.url
     : profile.picture.uri
 
-  const splitUrl = url.split('/')
-  const ipfs = splitUrl[splitUrl.length - 1]
-  return `https://cf-ipfs.com/ipfs/${ipfs}`
+  if (url.includes('ipfs')) {
+    const splitUrl = url.split('/')
+    const ipfs = splitUrl[splitUrl.length - 1]
+    return `https://cf-ipfs.com/ipfs/${ipfs}`
+  }
+  return url
 }
 
 export default function Profile(props) {
