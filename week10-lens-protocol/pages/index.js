@@ -7,9 +7,13 @@ export default function Home() {
 
   if (loading) return 'Loading..';
   if (error) return `Error! ${error.message}`;
-
+  console.log('home gql data', data);
   return (
     <div>
+      <div>
+        Total Profiles: {data.globalProtocolStats.totalProfiles + "\n"}
+        Total Posts: {data.globalProtocolStats.totalPosts}
+      </div>
       {data.recommendedProfiles.map((profile, index) => {
         console.log(`Profile ${index}:`, profile);
         return <Profile key={profile.id} profile={profile} displayFullProfile={false} />;

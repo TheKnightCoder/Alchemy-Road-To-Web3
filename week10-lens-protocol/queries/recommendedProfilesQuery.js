@@ -4,6 +4,10 @@ import { gql } from '@apollo/client';
 
 export default gql`
   query RecommendedProfiles {
+    globalProtocolStats {
+      totalProfiles
+      totalPosts
+    }
     recommendedProfiles {
           id
         name

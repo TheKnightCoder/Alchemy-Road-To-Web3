@@ -57,6 +57,7 @@ export default function Profile(props) {
               <p className="mt-2 text-xs text-slate-500">
                 following: {profile.stats.totalFollowing} followers:{" "}
                 {profile.stats.totalFollowers}
+                total posts: {profile.stats.totalPosts}
               </p>
             </div>
           </div>
